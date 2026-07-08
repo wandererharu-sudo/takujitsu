@@ -48,6 +48,14 @@ header .range{font-size:.72rem; color:var(--sub); margin-top:2px}
   background:var(--card); color:var(--warn); border:1px solid var(--line); border-radius:12px; cursor:pointer}
 .geppa-btn.active{background:var(--warn); color:#fff; border-color:var(--warn)}
 .gp{font-size:.72rem; color:var(--warn); border:1px solid var(--warn); border-radius:4px; padding:0 4px; margin-left:2px; white-space:nowrap}
+.rk{font-size:.7rem; color:var(--sub); white-space:nowrap; min-width:2.6em}
+.rk.taian{color:var(--gold); font-weight:600}
+.rk.butsu{opacity:.7}
+.pm{font-size:.8rem; white-space:nowrap}
+.pm.star{color:var(--gold)}
+.pm.chong{color:var(--warn)}
+.worst{font-size:.72rem; color:#fff; background:var(--warn); border-radius:4px; padding:0 5px; margin-left:2px; white-space:nowrap}
+.legend{margin-top:10px; font-size:.68rem; color:var(--sub); line-height:1.8}
 h2{font-size:.85rem; color:var(--sub); font-weight:normal; margin:16px 2px 8px; letter-spacing:.15em}
 .uses{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
 .uses button{
@@ -106,6 +114,9 @@ footer p{margin:2px 0}
 <div id="result"></div>
 
 <footer>
+  <p class="legend">六曜＝大安・仏滅など（旧暦から算出）<br>
+  ⭐＝木水の巡る日（気の合う日）／▲＝冲の日（大事は控えめに）<br>
+  月破＝大凶日／<b>大凶</b>＝月破と冲が重なる日</p>
   <p>出典：鍾福堂通書系 擇日通書</p>
   <p id="foot-range"></p>
 </footer>
@@ -165,7 +176,7 @@ function todayStr(){
   const el = document.getElementById("today");
   const r = byDate[t];
   const f = fmt(t);
-  let h = '<div class="date">今日 '+f.txt+'（'+f.wd+'）</div>';
+  let h = '<div class="date">今日 '+f.txt+'（'+f.wd+'）'+(r&&r.r ? '・'+r.r : '')+'</div>';
   if(!r){
     h += '<div class="none">この日の擇日は未記録です（登録範囲外）。</div>';
   }else{
@@ -179,8 +190,15 @@ function todayStr(){
     }else{
       h += '<div class="none">吉項目なし。特別な事は控えめに。</div>';
     }
-    if(r.geppa){
+    if(r.geppa && r.p==="冲"){
+      h += '<div class="geppa-note">‼ 月破と冲が重なる大凶日 ─ 大事な行動は見送りを。</div>';
+    }else if(r.geppa){
       h += '<div class="geppa-note">⚠ 月破 ─ 契約・開業など大事な行動は避けたい日です。</div>';
+    }else if(r.p==="冲"){
+      h += '<div class="geppa-note">▲ 冲の日 ─ 大事な判断は控えめに。</div>';
+    }
+    if(r.p==="吉" && !r.geppa){
+      h += '<div class="geppa-note" style="color:var(--gold)">⭐ 木水の巡る日 ─ 気の合う一日です。</div>';
     }
   }
   el.innerHTML = h;
@@ -251,10 +269,17 @@ function render(pred, label, meaningText, match){
     list.forEach(r=>{
       const f = fmt(r.date);
       const its = r.items.map(i => (match && match.includes(i)) ? "<b>"+i+"</b>" : i).join("・");
-      const gp = r.geppa ? '<span class="gp">月破</span>' : "";
+      let badge = "";
+      if(r.geppa && r.p==="冲") badge = '<span class="worst">大凶</span>';
+      else{
+        if(r.geppa) badge += '<span class="gp">月破</span>';
+        if(r.p==="冲") badge += '<span class="pm chong">▲</span>';
+      }
+      if(r.p==="吉" && !r.geppa) badge += '<span class="pm star">⭐</span>';
+      const rk = r.r ? '<span class="rk'+(r.r==="大安"?" taian":r.r==="仏滅"?" butsu":"")+'">'+r.r+'</span>' : "";
       const add = match ? '<a class="add" href="'+gcalUrl(r, label)+'" target="_blank" rel="noopener">＋予定</a>' : "";
       h += '<div class="day"><span class="d '+f.cls+'">'+f.txt+'<span class="wd">（'+f.wd+'）</span></span>'
-         + '<span class="k">'+r.kanshi+'</span>'+gp+'<span class="it">'+its+'</span>'+add+'</div>';
+         + rk + '<span class="k">'+r.kanshi+'</span>'+badge+'<span class="it">'+its+'</span>'+add+'</div>';
     });
     if(!shownAll && hits.length > 10){
       h += '<button class="more" id="moreBtn">すべて見る（あと'+(hits.length-10)+'日）</button>';
